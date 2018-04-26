@@ -38,8 +38,39 @@ class Sentinel:
                 "https://www.instagram.com/accounts/login/ajax/", 
                 data={'username': self.username, 'password': self.password, 'queryParams': {}}, 
                 allow_redirects=True)
+            
+            print(l.content)
+            
             if l.status_code == 200:
-                if l.text.find(self.username) != -1:
+                jsonlogin = json.loads(l.content)
+                if jsonlogin["authenticated"] is True:
+                    cookies = l.headers['Set-Cookie']
+                    sessionid = cookies.split("sessionid=")[1].split("; ")[0]
+                    self.session.headers.update({"cookie": self.session.headers['cookie'] + " ; ds_user_id={} ; sessionid={}".format(jsonlogin["userId"], sessionid)})
                     pickle.dump(self.session, open("./sentinel", "wb"))
         else:
             self.session = pickle.load(open("./sentinel", "rb"))
+
+    def checkpage(self, pagename):
+        r = self.session.get("https://www.instagram.com/{}/".format(pagename))
+        if r.status_code == 200:
+            try:
+                userinfo = r.text.split('<script type="text/javascript">window._sharedData = ')[1].split(';</script>')[0]
+                userjson = json.loads(userinfo)
+                private = userjson['entry_data']['ProfilePage'][0]['graphql']['user']['is_private']
+                alreadyfollow = userjson['entry_data']['ProfilePage'][0]['graphql']['user']['followed_by_viewer'] 
+                if alreadyfollow is True or private is False:
+                    return "Ok, you will soon receive the notification", True
+                else:
+                    idpage = userjson['entry_data']['ProfilePage'][0]['graphql']['user']['id']
+                    f = self.session.post('https://www.instagram.com/web/friendships/{}/follow/'.format(idpage))
+                    print(f.content)
+                    
+                    if f.status_code == 200:
+                        if f.json()['status'].lower() == 'ok':
+                            return "You have a follow requests by {}. If you plan to continue, accept and try again. Else do not do anything", True
+            except Exception as e:
+                return "Sorry, there was an error. Try again", False
+        else:
+            return "Cannot find {} page".format(pagename), False
+
