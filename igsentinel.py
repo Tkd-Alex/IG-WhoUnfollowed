@@ -6,94 +6,130 @@ from time import sleep
 from pprint import pprint
 from fake_useragent import UserAgent
 
+from pyvirtualdisplay import Display
+from selenium import webdriver
+from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver import DesiredCapabilities
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.action_chains import ActionChains
+from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import WebDriverException
+
+
 class Sentinel:
-    def __init__(self, username, password, proxy=None):
+    def __init__(self, username, password, 
+                 proxy=None,
+                 page_delay=25,
+                 headless_browser=False,
+                 nogui=False
+                ):
         self.username = username
         self.password = password
-        self.session = requests.Session()
-        if not proxy is None:
-            proxies = { 'http': 'http://{}'.format(proxy), 'https': 'http://{}'.format(proxy) }
-            self.session.proxies.update(proxies)          
+        
+        if nogui:
+            self.display = Display(visible=0, size=(800, 600))
+            self.display.start()
+
+        self.browser = None
+        self.headless_browser = headless_browser
+        self.proxy = proxy
+
+        self.nogui = nogui
+
+        self.page_delay = page_delay
+        self.switch_language = True
+
+        self.aborting = False
+
+        if not os.path.exists("cookies"):
+            os.makedirs("cookies")
+
+        self.initselenium()
+
+    def initselenium(self):
+        chromedriver_location = './chromedriver'
+        chrome_options = Options()
+        chrome_options.add_argument('--dns-prefetch-disable')
+        chrome_options.add_argument('--no-sandbox')
+        chrome_options.add_argument('--lang=en-US')
+        chrome_options.add_argument('--disable-setuid-sandbox')
+
+        chrome_options.add_argument('--disable-gpu')
+
+        if not self.proxy is None:
+            proxy = self.proxy.split(":")
+            chrome_options.add_argument('--proxy-server={}:{}'.format(proxy[0], proxy[1]))
+
+        if self.headless_browser:
+            chrome_options.add_argument('--headless')
+
+        chrome_prefs = {
+            'intl.accept_languages': 'en-US',
+            'profile.managed_default_content_settings.images': 2,
+            'popups': 1
+        }
+        chrome_options.add_experimental_option('prefs', chrome_prefs)
+
+        self.browser = webdriver.Chrome(chromedriver_location, chrome_options=chrome_options)
+        self.browser.implicitly_wait(self.page_delay)
+        self.browser.set_page_load_timeout(self.page_delay)
+
+        return self
 
     def login(self):
-        if not os.path.exists("./sentinel"):
-            ua = UserAgent()
-            useragent = ua.random
-            headers = { 'User-Agent': useragent }
-            r = self.session.get("https://instagram.com", headers=headers)
-            self.session.headers.update({
-                'origin': 'https://www.instagram.com',
-                'accept-encoding': 'gzip, deflate, br',
-                'accept-language': 'it-IT,it;q=0.9,en-US;q=0.8,en;q=0.7',
-                'x-requested-with': 'XMLHttpRequest',
-                'user-agent': useragent,
-                'cookie': 'rur={}; csrftoken={}; mid=WuI2OQAEAAGriWx5lB4XD2pCeCtX'.format(r.cookies['rur'], r.cookies['csrftoken']),
-                'x-csrftoken': '{}'.format(r.cookies['csrftoken']),
-                'x-instagram-ajax': '1',
-                'content-type': 'application/x-www-form-urlencoded',
-                'accept': '*/*',
-                'referer': 'https://www.instagram.com/',
-                'authority': 'www.instagram.com',
-            })
-            l = self.session.post(
-                "https://www.instagram.com/accounts/login/ajax/", 
-                data={'username': self.username, 'password': self.password, 'queryParams': {}}, 
-                allow_redirects=True)
-            
-            print(l.content)
-            
-            if l.status_code == 200:
-                jsonlogin = json.loads(l.content)
-                if jsonlogin["authenticated"] is True:
-                    cookies = l.headers['Set-Cookie']
-                    sessionid = cookies.split("sessionid=")[1].split("; ")[0]
-                    self.session.headers.update({"cookie": self.session.headers['cookie'] + " ; ds_user_id={} ; sessionid={}".format(jsonlogin["userId"], sessionid)})
-                    pickle.dump(self.session, open("./sentinel", "wb"))
-        else:
-            self.session = pickle.load(open("./sentinel", "rb"))
 
-    def checkpage(self, pagename):
-        r = self.session.get("https://www.instagram.com/{}/".format(pagename))
-        if r.status_code == 200:
+        self.browser.get('https://www.instagram.com')
+        cookie_loaded = False
+
+        try:
+            if os.path.isfile('sentinel.pkl'):
+                self.browser.get('https://www.google.com')
+                for cookie in pickle.load(open('sentinel.pkl', 'rb')):
+                    self.browser.add_cookie(cookie)
+                    cookie_loaded = True
+        except (WebDriverException, OSError, IOError):
+            print("Cookie file not found, creating cookie...")
+
+        self.browser.get('https://www.instagram.com')
+        login_elem = self.browser.find_elements_by_xpath("//*[contains(text(), 'Log in')]")
+        
+        if len(login_elem) == 0 and cookie_loaded is True:
+            return True
+
+        if self.switch_language:
             try:
-                userinfo = r.text.split('<script type="text/javascript">window._sharedData = ')[1].split(';</script>')[0]
-                userjson = json.loads(userinfo)
-                private = userjson['entry_data']['ProfilePage'][0]['graphql']['user']['is_private']
-                alreadyfollow = userjson['entry_data']['ProfilePage'][0]['graphql']['user']['followed_by_viewer'] 
-                if alreadyfollow is True or private is False:
-                    return "Ok, you will soon receive the notification", True
-                else:
-                    idpage = userjson['entry_data']['ProfilePage'][0]['graphql']['user']['id']
-                    f = self.session.post('https://www.instagram.com/web/friendships/{}/follow/'.format(idpage))
-                    print(f.content)
-                    
-                    if f.status_code == 200:
-                        if f.json()['status'].lower() == 'ok':
-                            return "You have a follow requests by {}. If you plan to continue, accept and try again. Else do not do anything".format(self.username), True
+                self.browser.find_element_by_xpath("//select[@class='_fsoey']/option[text()='English']").click()
             except Exception as e:
-                return "Sorry, there was an error. Try again", False
-        else:
-            return "Cannot find {} page".format(pagename), False
+                pass
 
-    def listfollowers(self, pageid):
-        fwlist = []
-        url = 'https://www.instagram.com/graphql/query/?query_hash=37479f2b8209594dde7facb0d904896a'
-        f = self.session.get('{}&variables={}'.format(url, json.dumps({'id': pageid, 'first': 50}, separators=(',',':'))))
-        if f.status_code == 200:
-            fjson = f.json()
-            if fjson['status'].lower() == 'ok':
-                fwlist = fwlist + fjson['data']['user']['edge_followed_by']['edges']
-            while fjson['data']['user']['edge_followed_by']['page_info']['has_next_page'] is True:
-                sleep(1)
-                end_cursor = fjson['data']['user']['edge_followed_by']['page_info']['end_cursor']
-                f = self.session.get('{}&variables={}'.format(url, json.dumps({'id': pageid, 'first': 50, 'after': end_cursor}, separators=(',',':'))))
-                if f.status_code == 200:
-                    fjson = f.json()
-                    if fjson['status'].lower() == 'ok':
-                        fwlist = fwlist + fjson['data']['user']['edge_followed_by']['edges']
-                else:
-                    print("Failed with status code: {}".format(f.status_code))
-                    print(f.content)
-        else:
-            print("Failed with status code: {}".format(f.status_code))
-            print(f.content)
+        login_elem = self.browser.find_element_by_xpath("//article/div/div/p/a[text()='Log in']")
+        if login_elem is not None:
+            ActionChains(self.browser).move_to_element(login_elem).click().perform()
+
+        input_username = self.browser.find_elements_by_xpath("//input[@name='username']")
+        ActionChains(self.browser).move_to_element(input_username[0]).click().send_keys(self.username).perform()
+        sleep(1)
+
+        input_password = self.browser.find_elements_by_xpath("//input[@name='password']")
+        ActionChains(self.browser).move_to_element(input_password[0]).click().send_keys(self.password).perform()
+
+        login_button = self.browser.find_element_by_xpath("//form/span/button[text()='Log in']")
+        ActionChains(self.browser).move_to_element(login_button).click().perform()
+        sleep(2)
+
+        nav = self.browser.find_elements_by_xpath('//nav')
+        if len(nav) == 2:
+            pickle.dump(self.browser.get_cookies(), open('sentinel.pkl', 'wb'))
+            return True
+        
+        return False
+
+    def end(self):
+        self.browser.delete_all_cookies()
+        self.browser.quit()
+
+        if self.nogui:
+            self.display.stop()
+
+        return self
