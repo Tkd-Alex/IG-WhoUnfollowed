@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import requests, pickle, json, os
-from time import sleep
+import requests, pickle, json, os, random
+from time import sleep, clock
 from pprint import pprint
 from fake_useragent import UserAgent
 
@@ -15,7 +15,6 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.common.exceptions import TimeoutException
 from selenium.common.exceptions import WebDriverException
-
 
 class Sentinel:
     def __init__(self, username, password, 
@@ -39,8 +38,6 @@ class Sentinel:
 
         self.page_delay = page_delay
         self.switch_language = True
-
-        self.aborting = False
 
         if not os.path.exists("cookies"):
             os.makedirs("cookies")
@@ -133,3 +130,88 @@ class Sentinel:
             self.display.stop()
 
         return self
+
+    def checkuser(self, username):
+        self.browser.get('https://www.instagram.com/{}'.format(username))
+        try:
+            error = self.browser.find_element_by_class_name("error-container")
+            if 'isn\'t available' in error.text.lower():
+                return False, error.text
+        except NoSuchElementException:
+            pass
+        try:
+            isprivate = self.browser.find_element_by_xpath("//h2[@class='_kcrwx']")
+            if 'private' in isprivate.text.lower():
+                try:
+                    follow_button = self.browser.find_element_by_xpath("//button[text()='Follow']")
+                    ActionChains(self.browser).move_to_element(follow_button).click().perform()
+                    return False, "You have a follow requests by from selenium.webdriver.common.action_chains import ActionChains{}. If you plan to continue, accept and try again. Else do not do anything".format(self.username)
+                except NoSuchElementException:
+                    return False, "It would seem that yours is private. We tried to follow you but without any success."
+        except NoSuchElementException:
+            pass
+        return True, "Ok, you will soon receive the notification"
+
+    def listfollowers(self, username):
+        self.browser.get('https://www.instagram.com/{}'.format(username))
+        sleep(1)
+
+        fwcounts = self.browser.find_element_by_xpath('//a[@href="/{}/followers/"]/span'.format(username))
+        ActionChains(self.browser).move_to_element(fwcounts).click().perform()
+        fwcounts = fwcounts.get_attribute("title")
+        fwcounts = int(fwcounts.replace(",","").replace(".",""))
+        print("Followers number for {}: {}".format(username, fwcounts))
+
+        sleep(1)
+        licounts = 0
+        iteration = 0
+        fast = random.randint(5,8)
+        slow = random.randint(9,15)
+        trend = {
+            'counter': 0,
+            'fast': True
+        }
+        predicted = fwcounts/12
+        while(True):
+            try:
+                random.seed(clock)
+                self.browser.execute_script("li = document.getElementsByClassName('_6e4x5'); li[li.length-{}].scrollIntoView()".format(random.randint(1,3)))
+                
+                if trend['fast'] is True and trend['counter'] <= fast:
+                    sleep(random.uniform(0.2, 0.9))
+                elif trend['fast'] is True and trend['counter'] > fast:
+                    trend['counter'] = 0
+                    trend['fast'] = False
+                
+                if trend['fast'] is False and trend['counter'] <= slow:
+                    sleep(random.randint(2,5))
+                elif trend['fast'] is False and trend['counter'] > slow:
+                    trend['counter'] = 0
+                    trend['fast'] = True
+
+                li = self.browser.find_elements_by_xpath("//li[@class='_6e4x5']")
+                licounts = len(li)
+
+                # Humanize
+                if iteration % 15 == 0:
+                    self.browser.execute_script("li = document.getElementsByClassName('_6e4x5'); li[li.length-{}].scrollIntoView()".format(random.randint(5,14)))
+                    sleep(1)
+
+                # Humanize
+                if iteration % 30 == 0:
+                    sleep(random.randint(5,10))
+
+                iteration += 1
+                print("iteration={}, licounts={}, fast={}".format(iteration, licounts, trend['fast'] ))
+                if iteration > predicted + random.randint(10,30):
+                    break
+                
+                trend['counter'] += 1
+
+                if licounts <= fwcounts:
+                    break;
+            except Exception as e:
+                pass
+
+
+
