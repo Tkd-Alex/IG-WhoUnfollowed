@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import requests, pickle, json, os
+from time import sleep
 from pprint import pprint
 from fake_useragent import UserAgent
 
@@ -68,9 +69,31 @@ class Sentinel:
                     
                     if f.status_code == 200:
                         if f.json()['status'].lower() == 'ok':
-                            return "You have a follow requests by {}. If you plan to continue, accept and try again. Else do not do anything", True
+                            return "You have a follow requests by {}. If you plan to continue, accept and try again. Else do not do anything".format(self.username), True
             except Exception as e:
                 return "Sorry, there was an error. Try again", False
         else:
             return "Cannot find {} page".format(pagename), False
 
+    def listfollowers(self, pageid):
+        fwlist = []
+        url = 'https://www.instagram.com/graphql/query/?query_hash=37479f2b8209594dde7facb0d904896a'
+        f = self.session.get('{}&variables={}'.format(url, json.dumps({'id': pageid, 'first': 50}, separators=(',',':'))))
+        if f.status_code == 200:
+            fjson = f.json()
+            if fjson['status'].lower() == 'ok':
+                fwlist = fwlist + fjson['data']['user']['edge_followed_by']['edges']
+            while fjson['data']['user']['edge_followed_by']['page_info']['has_next_page'] is True:
+                sleep(1)
+                end_cursor = fjson['data']['user']['edge_followed_by']['page_info']['end_cursor']
+                f = self.session.get('{}&variables={}'.format(url, json.dumps({'id': pageid, 'first': 50, 'after': end_cursor}, separators=(',',':'))))
+                if f.status_code == 200:
+                    fjson = f.json()
+                    if fjson['status'].lower() == 'ok':
+                        fwlist = fwlist + fjson['data']['user']['edge_followed_by']['edges']
+                else:
+                    print("Failed with status code: {}".format(f.status_code))
+                    print(f.content)
+        else:
+            print("Failed with status code: {}".format(f.status_code))
+            print(f.content)
