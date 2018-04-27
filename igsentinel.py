@@ -177,6 +177,7 @@ class Sentinel:
                 random.seed(clock)
                 self.browser.execute_script("li = document.getElementsByClassName('_6e4x5'); li[li.length-{}].scrollIntoView()".format(random.randint(1,3)))
                 
+                # Humanize
                 if trend['fast'] is True and trend['counter'] <= fast:
                     sleep(random.uniform(0.2, 0.9))
                 elif trend['fast'] is True and trend['counter'] > fast:
@@ -198,20 +199,31 @@ class Sentinel:
                     sleep(1)
 
                 # Humanize
-                if iteration % 30 == 0:
+                if iteration % random.randint(25,40) == 0:
                     sleep(random.randint(5,10))
 
                 iteration += 1
+                trend['counter'] += 1
+
                 print("iteration={}, licounts={}, fast={}".format(iteration, licounts, trend['fast'] ))
+                
+                if licounts >= fwcounts:
+                    break;
+
                 if iteration > predicted + random.randint(10,30):
                     break
                 
-                trend['counter'] += 1
-
-                if licounts <= fwcounts:
-                    break;
             except Exception as e:
                 pass
 
+        fwlist = []
+        for fw in li:
+            splittedtext = fw.text.split("\n")
+            fwlist.append({
+                'username': splittedtext[0],
+                'link': "https://www.instagram.com/{}".format(splittedtext[0])
+            })
+
+        return fwlist
 
 
