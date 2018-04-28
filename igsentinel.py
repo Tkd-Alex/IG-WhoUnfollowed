@@ -54,11 +54,9 @@ class Sentinel:
 
         chrome_options.add_argument('--disable-gpu')
 
-        '''
         if not self.proxy is None:
             proxy = self.proxy.split(":")
             chrome_options.add_argument('--proxy-server={}:{}'.format(proxy[0], proxy[1]))
-        '''
 
         if self.headless_browser:
             chrome_options.add_argument('--headless')
@@ -168,89 +166,39 @@ class Sentinel:
         fwcounts = int(fwcounts.replace(",","").replace(".",""))
 
         sleep(1)
-        # Init support variable.
-        # li counts = numbers of followers founded.
-        # iteration = numbers of iteration.
-        # fast = numbers of scrolling to do fast.
-        # slow = numbers of scrolling to do slow.
-        # tren = counter, numbers of iteration. fast, boolean fast or slow.
-        # predicted = numbers of predicted iteration.
+        
         licounts = 0
         iteration = 0
-        lastcounter = 0
-        fast = random.randint(6,9)
-        slow = random.randint(9,13)
-        trend = {
-            'counter': 0,
-            'fast': True
-        }
         predicted = fwcounts/12
+        
         while(True):
             try:
-                random.seed(clock)
+                #random.seed(clock)
 
-                # Scrolling humanized, go to the n last element and after +1.
-                i = random.randint(2, 10)
-                while True:
-                    sleep(0.2)
-                    self.browser.execute_script("li = document.getElementsByClassName('_6e4x5'); li[li.length-{}].scrollIntoView()".format(i))
-                    i = i-1
-                    if i == 1:
-                        break
-                
-                # Humanize
-                if trend['fast'] is True and trend['counter'] <= fast:
-                    sleep(random.uniform(0.5, 1))
-                elif trend['fast'] is True and trend['counter'] > fast:
-                    trend['counter'] = 0
-                    trend['fast'] = False
-                
-                if trend['fast'] is False and trend['counter'] <= slow:
-                    sleep(random.randint(2,4))
-                elif trend['fast'] is False and trend['counter'] > slow:
-                    trend['counter'] = 0
-                    trend['fast'] = True
+                ActionChains(self.browser).send_keys(Keys.DOWN).perform()
+                #ActionChains(self.browser).send_keys(Keys.SPACE).perform()
+                #sleep(random.uniform(0.7, 1.3))
 
                 li = self.browser.find_elements_by_xpath("//li[@class='_6e4x5']")
                 licounts = len(li)
 
-                # Humanize. Scroll to top, wait and exit.
-                if (iteration % 15 == 0 and iteration != 0) or (lastcounter == licounts):
-                    print("datetime={}, account={}, iteration={}, humanize=scroll middle".format(datetime.now().strftime('%Y/%m/%d %H:%M:%S'), username, iteration))
-                    self.browser.execute_script("li = document.getElementsByClassName('_6e4x5'); li[0].scrollIntoView()")
-                    sleep(1)
-
-                    print("datetime={}, account={}, iteration={}, humanize=exit and wait".format(datetime.now().strftime('%Y/%m/%d %H:%M:%S'), username, iteration))
-                    exitbtn = self.browser.find_element_by_xpath("//button[@class='_dcj9f']")
-                    ActionChains(self.browser).move_to_element(exitbtn).click().perform()
-                    sleep(1)
-                    showfw = self.browser.find_element_by_xpath('//a[@href="/{}/followers/"]/span'.format(username))
-                    ActionChains(self.browser).move_to_element(showfw).click().perform()
-
-                    sleep(random.randint(5,10))
-
-                lastcounter = licounts
                 iteration += 1
-                trend['counter'] += 1
-                
-                if licounts >= fwcounts or iteration > predicted + random.randint(10,30):
-                    break
 
-                print("datetime={}, account={}, iteration={}, licounts={}, fast={}".format(datetime.now().strftime('%Y/%m/%d %H:%M:%S'), username, iteration, licounts, trend['fast'] ))
+                # Humanize
+                '''
+                if iteration % 25 == 0:
+                    for i in range(0, random.randint(10,15)):
+                        ActionChains(self.browser).send_keys(Keys.UP).perform()
+                    for i in range(0, random.randint(20,30)):
+                        ActionChains(self.browser).send_keys(Keys.DOWN).perform()
+                '''
+                #if licounts >= fwcounts or iteration > predicted + random.randint(10,30):
+                #    break
+
+                print("datetime={}, account={}, iteration={}, licounts={}".format(datetime.now().strftime('%Y/%m/%d %H:%M:%S'), username, iteration, licounts ))
                 
             except Exception as e:
                 print(e)
-                try:
-                    exitbtn = self.browser.find_element_by_xpath("//button[@class='_dcj9f']")
-                    ActionChains(self.browser).move_to_element(exitbtn).click().perform()
-                except NoSuchElementException:
-                    pass
-                sleep(random.randint(5,10))
-                try:
-                    showfw = self.browser.find_element_by_xpath('//a[@href="/{}/followers/"]/span'.format(username))
-                    ActionChains(self.browser).move_to_element(showfw).click().perform()
-                except NoSuchElementException:
-                    pass
                 pass
 
         fwlist = []
