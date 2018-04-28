@@ -61,27 +61,30 @@ def track(bot, update, args):
 
 def sentinelThread(bot, user):
     while True:
-        random.seed(clock())
-        proxy = proxy=random.choice(proxies)
-        print("{}\t Start sentinel thread for igpage={}, proxy={}".format(datetime.now().strftime('%Y/%m/%d %H:%M:%S'), user['igpage'], proxy))
-        s = Sentinel(sentinel_username, sentinel_password, mobile=True, nogui=True, headless_browser=True, )
-        login = s.login()
-        print("{}\t Sentinel login={}, igpage={}".format(datetime.now().strftime('%Y/%m/%d %H:%M:%S'), login, user['igpage']))
-        fwlist = s.listfollowers(user['igpage'])
-        print("{}\t Sentinel followers list complete, igpage={}, len={}".format(datetime.now().strftime('%Y/%m/%d %H:%M:%S'), user['igpage'], len(fwlist)))
-        s.end()
-        if not fwlist == []:
-            user = db.users.find_one({"_id": user['_id']})
-            message = ""
-            for fw in user['followers']:
-                if not fw in fwlist:
-                    message += '<a href="https://instagram.com/{}">{}</a>\n'.format(fw, fw)
-            if not message == "":
-                message = "{} account have unfollowed you!\n".format(len(message.split('\n'))-1) + message
-                for chat_id in user['chat_id']:
-                    bot.send_message(chat_id, text=message, parse_mode='HTML')
+        try:
+            random.seed(clock())
+            proxy = proxy=random.choice(proxies)
+            print("{}\t Start sentinel thread for igpage={}, proxy={}".format(datetime.now().strftime('%Y/%m/%d %H:%M:%S'), user['igpage'], proxy))
+            s = Sentinel(sentinel_username, sentinel_password, mobile=True, nogui=True, headless_browser=True, )
+            login = s.login()
+            print("{}\t Sentinel login={}, igpage={}".format(datetime.now().strftime('%Y/%m/%d %H:%M:%S'), login, user['igpage']))
+            fwlist = s.listfollowers(user['igpage'])
+            print("{}\t Sentinel followers list complete, igpage={}, len={}".format(datetime.now().strftime('%Y/%m/%d %H:%M:%S'), user['igpage'], len(fwlist)))
+            s.end()
+            if not fwlist == []:
+                user = db.users.find_one({"_id": user['_id']})
+                message = ""
+                for fw in user['followers']:
+                    if not fw in fwlist:
+                        message += '<a href="https://instagram.com/{}">{}</a>\n'.format(fw, fw)
+                if not message == "":
+                    message = "{} account have unfollowed you!\n".format(len(message.split('\n'))-1) + message
+                    for chat_id in user['chat_id']:
+                        bot.send_message(chat_id, text=message, parse_mode='HTML')
 
-            db.users.update_one({"_id": user['_id']}, {"$set": {"followers": fwlist} })
+                db.users.update_one({"_id": user['_id']}, {"$set": {"followers": fwlist} })
+            except Exception as e:
+                pass
 
         #sleep(300) # 5minutes
         sleep(random.randint(3200, 4000)) # range(53m, 66m)
