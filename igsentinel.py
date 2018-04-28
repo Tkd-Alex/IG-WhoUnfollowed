@@ -171,32 +171,82 @@ class Sentinel:
         iteration = 0
         predicted = fwcounts/12
         
+        lastcounter = 0
+        humanizetest = 0
+        humancritical = 0
+
         while(True):
             try:
-                #random.seed(clock)
+                random.seed(clock)
 
-                ActionChains(self.browser).send_keys(Keys.DOWN).perform()
-                #ActionChains(self.browser).send_keys(Keys.SPACE).perform()
-                #sleep(random.uniform(0.7, 1.3))
+                sleep(1)
+                
+                # Press space
+                for i in range(0, 3):
+                    ActionChains(self.browser).send_keys(Keys.SPACE).perform()
+                    sleep(0.02)
 
+                # Get all <li>
                 li = self.browser.find_elements_by_xpath("//li[@class='_6e4x5']")
                 licounts = len(li)
 
+                # Check spinner presence
+                while True:
+                    try:
+                        if self.browser.find_element_by_xpath("//li[@class='_l0pt6']"):
+                            sleep(1)
+                    except Exception as e:
+                        pass
+                    
+
+                if humanizetest == 3:
+                    # Humanize critical. Go back, wait 1m * humancritical. Return to fw list page.
+                    print("datetime={}, account={}, iteration={}, action=GOBACK & WAIT! {}m".format(datetime.now().strftime('%Y/%m/%d %H:%M:%S'), username, iteration, (60 * (humancritical+1)/60) ))
+                    
+                    sleep(5)
+                    self.browser.execute_script("window.history.go(-1)")
+                    sleep(60 * (humancritical+1))
+
+                    try:
+                        while True:
+                            fwpage = self.browser.find_element_by_xpath('//a[@href="/{}/followers/"]/span'.format(username))
+                            ActionChains(self.browser).move_to_element(fwpage).click().perform()
+                            sleep(10)
+                            if 'followers' in self.browser.current_url:
+                                break
+                    except Exception as e:
+                        pass
+
+                    try:
+                        self.browser.execute_script("li = document.getElementsByClassName('_6e4x5'); li[li.length-1].scrollIntoView()")
+                    except Exception as e:
+                        for i in range(0, int(licounts/10)):
+                            ActionChains(self.browser).send_keys(Keys.SPACE).perform()
+                            sleep(0.02)
+                    
+                    humanizetest = 0
+                elif lastcounter == licounts:
+                    # Humazine slowly. UP & DOWN on fw list page.
+                    print("datetime={}, account={}, iteration={}, action=UP & SPACE!".format(datetime.now().strftime('%Y/%m/%d %H:%M:%S'), username, iteration ))
+                    for i in range(0, (40 * (humanizetest+1))):
+                        ActionChains(self.browser).send_keys(Keys.UP).perform()
+                        sleep(0.02)
+                    
+                    for i in range(0, (50 * (humanizetest+1))):
+                        ActionChains(self.browser).send_keys(Keys.DOWN).perform()
+                        sleep(0.02)
+                    
+                    humanizetest += 1
+                else:
+                    humanizetest = 0
+
+                lastcounter = licounts
                 iteration += 1
 
-                # Humanize
-                '''
-                if iteration % 25 == 0:
-                    for i in range(0, random.randint(10,15)):
-                        ActionChains(self.browser).send_keys(Keys.UP).perform()
-                    for i in range(0, random.randint(20,30)):
-                        ActionChains(self.browser).send_keys(Keys.DOWN).perform()
-                '''
-                #if licounts >= fwcounts or iteration > predicted + random.randint(10,30):
-                #    break
+                if (licounts >= fwcounts) or (iteration > (predicted+(predicted/2))):
+                    break
 
                 print("datetime={}, account={}, iteration={}, licounts={}".format(datetime.now().strftime('%Y/%m/%d %H:%M:%S'), username, iteration, licounts ))
-                
             except Exception as e:
                 print(e)
                 pass
