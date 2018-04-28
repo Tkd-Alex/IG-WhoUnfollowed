@@ -83,8 +83,8 @@ def sentinelThread(bot, user):
                         bot.send_message(chat_id, text=message, parse_mode='HTML')
 
                 db.users.update_one({"_id": user['_id']}, {"$set": {"followers": fwlist} })
-            except Exception as e:
-                pass
+        except Exception as e:
+            pass
 
         #sleep(300) # 5minutes
         sleep(random.randint(3200, 4000)) # range(53m, 66m)
