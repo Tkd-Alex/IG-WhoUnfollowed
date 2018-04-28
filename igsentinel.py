@@ -191,12 +191,14 @@ class Sentinel:
                 licounts = len(li)
 
                 # Check spinner presence
+                '''
                 while True:
                     try:
                         if self.browser.find_element_by_xpath("//li[@class='_l0pt6']"):
                             sleep(1)
                     except Exception as e:
                         pass
+                '''
                     
 
                 if humanizetest == 3:
