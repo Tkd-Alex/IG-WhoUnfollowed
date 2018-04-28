@@ -60,7 +60,7 @@ def track(bot, update, args):
         update.message.reply_text('Wrong input! Usage: /track igpage.\nExample: /track <b>tkd_alex</b>', parse_mode='HTML')
 
 def sentinelThread(bot, user):
-    sleep(random.randint(60, 180)) # range(1m, 3m) to start thread.
+    #sleep(random.randint(60, 180)) # range(1m, 3m) to start thread.
     while True:
         print("{}\t Start sentinel thread for igpage={}".format(datetime.now().strftime('%Y/%m/%d %H:%M:%S'), user['igpage']))
         s = Sentinel(sentinel_username, sentinel_password, nogui=True, headless_browser=True, proxy=random.choice(proxies))

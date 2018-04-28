@@ -235,6 +235,7 @@ class Sentinel:
                 print("datetime={}, account={}, iteration={}, licounts={}, fast={}".format(datetime.now().strftime('%Y/%m/%d %H:%M:%S'), username, iteration, licounts, trend['fast'] ))
                 
             except Exception as e:
+                print(e)
                 pass
 
         fwlist = []
