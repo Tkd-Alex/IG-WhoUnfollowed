@@ -60,15 +60,16 @@ def track(bot, update, args):
         update.message.reply_text('Wrong input! Usage: /track igpage.\nExample: /track <b>tkd_alex</b>', parse_mode='HTML')
 
 def sentinelThread(bot, user):
-    random.seed(clock())
-    sleep(random.randint(60, 180)) # range(1m, 3m) to start thread.
-    
+    #random.seed(clock())
+    #sleep(random.randint(60, 180)) # range(1m, 3m) to start thread.
+
     while True:
         print("{}\t Start sentinel thread for igpage={}".format(datetime.now().strftime('%Y/%m/%d %H:%M:%S'), user['igpage']))
         s = Sentinel(sentinel_username, sentinel_password, mobile=True, nogui=True, headless_browser=True, proxy=random.choice(proxies))
-        s.login()
+        login = s.login()
+        print("{}\t Sentinel login={}, igpage={}".format(datetime.now().strftime('%Y/%m/%d %H:%M:%S'), login, user['igpage']))
         fwlist = s.listfollowers(user['igpage'])
-        print("{}\t Sentinel followers list complete, len={}".format(datetime.now().strftime('%Y/%m/%d %H:%M:%S'), len(fwlist)))
+        print("{}\t Sentinel followers list complete, igpage={}, len={}".format(datetime.now().strftime('%Y/%m/%d %H:%M:%S'), user['igpage'], len(fwlist)))
         s.end()
         if not fwlist == []:
             user = db.users.find_one({"_id": user['_id']})
