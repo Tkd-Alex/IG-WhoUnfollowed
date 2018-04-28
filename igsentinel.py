@@ -19,9 +19,10 @@ from selenium.common.exceptions import WebDriverException
 class Sentinel:
     def __init__(self, username, password, 
                  proxy=None,
-                 page_delay=25,
+                 page_delay=20,
                  headless_browser=False,
-                 nogui=False
+                 nogui=False,
+                 mobile=False
                 ):
         self.username = username
         self.password = password
@@ -38,6 +39,8 @@ class Sentinel:
 
         self.page_delay = page_delay
         self.switch_language = True
+
+        self.mobile = mobile
 
         self.initselenium()
 
@@ -65,9 +68,12 @@ class Sentinel:
         }
         chrome_options.add_experimental_option('prefs', chrome_prefs)
 
+        if self.mobile:
+            mobile_emulation = { "deviceName": "Nexus 5" }
+            chrome_options.add_experimental_option("mobileEmulation", mobile_emulation)
+
         self.browser = webdriver.Chrome(chromedriver_location, chrome_options=chrome_options)
         self.browser.implicitly_wait(self.page_delay)
-        self.browser.set_page_load_timeout(self.page_delay)
 
         return self
 
@@ -179,7 +185,15 @@ class Sentinel:
         while(True):
             try:
                 random.seed(clock)
-                self.browser.execute_script("li = document.getElementsByClassName('_6e4x5'); li[li.length-{}].scrollIntoView()".format(random.randint(1,3)))
+
+                # Scrolling humanized, go to the n last element and after +1.
+                i = random.randint(2, 10)
+                while True:
+                    sleep(0.2)
+                    self.browser.execute_script("li = document.getElementsByClassName('_6e4x5'); li[li.length-{}].scrollIntoView()".format(i))
+                    i = i-1
+                    if i == 1:
+                        break
                 
                 # Humanize
                 if trend['fast'] is True and trend['counter'] <= fast:
@@ -197,13 +211,19 @@ class Sentinel:
                 li = self.browser.find_elements_by_xpath("//li[@class='_6e4x5']")
                 licounts = len(li)
 
-                # Humanize. Scrool to middle.
-                if iteration % random.randint(14,20) == 0:
-                    self.browser.execute_script("li = document.getElementsByClassName('_6e4x5'); li[li.length-{}].scrollIntoView()".format(random.randint(5,14)))
+                # Humanize. Scroll to middle, wait and exit.
+                if iteration % 10 == 0 and iteration != 0:
+                    print("datetime={}, account={}, iteration={}, humanize=scroll back".format(datetime.now().strftime('%Y/%m/%d %H:%M:%S'), username, iteration))
+                    self.browser.execute_script("li = document.getElementsByClassName('_6e4x5'); li[li.length/2].scrollIntoView()")
                     sleep(1)
 
-                # Humanize. Wait.
-                if iteration % random.randint(25,40) == 0:
+                    print("datetime={}, account={}, iteration={}, humanize=exit and wait".format(datetime.now().strftime('%Y/%m/%d %H:%M:%S'), username, iteration))
+                    exitbtn = self.browser.find_element_by_xpath("//button[@class='_dcj9f']")
+                    ActionChains(self.browser).move_to_element(exitbtn).click().perform()
+                    sleep(1)
+                    showfw = self.browser.find_element_by_xpath('//a[@href="/{}/followers/"]/span'.format(username))
+                    ActionChains(self.browser).move_to_element(showfw).click().perform()
+
                     sleep(random.randint(5,10))
 
                 iteration += 1
