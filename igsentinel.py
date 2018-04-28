@@ -177,6 +177,7 @@ class Sentinel:
         # predicted = numbers of predicted iteration.
         licounts = 0
         iteration = 0
+        lastcounter = 0
         fast = random.randint(6,9)
         slow = random.randint(9,13)
         trend = {
@@ -199,7 +200,7 @@ class Sentinel:
                 
                 # Humanize
                 if trend['fast'] is True and trend['counter'] <= fast:
-                    sleep(random.uniform(0.2, 0.9))
+                    sleep(random.uniform(0.5, 1))
                 elif trend['fast'] is True and trend['counter'] > fast:
                     trend['counter'] = 0
                     trend['fast'] = False
@@ -213,11 +214,11 @@ class Sentinel:
                 li = self.browser.find_elements_by_xpath("//li[@class='_6e4x5']")
                 licounts = len(li)
 
-                # Humanize. Scroll to middle, wait and exit.
-                if iteration % 15 == 0 and iteration != 0:
-                    #print("datetime={}, account={}, iteration={}, humanize=scroll middle".format(datetime.now().strftime('%Y/%m/%d %H:%M:%S'), username, iteration))
-                    #self.browser.execute_script("li = document.getElementsByClassName('_6e4x5'); li[(li.length-1)/2].scrollIntoView()")
-                    #sleep(1)
+                # Humanize. Scroll to top, wait and exit.
+                if (iteration % 15 == 0 and iteration != 0) or (lastcounter == licounts):
+                    print("datetime={}, account={}, iteration={}, humanize=scroll middle".format(datetime.now().strftime('%Y/%m/%d %H:%M:%S'), username, iteration))
+                    self.browser.execute_script("li = document.getElementsByClassName('_6e4x5'); li[0].scrollIntoView()")
+                    sleep(1)
 
                     print("datetime={}, account={}, iteration={}, humanize=exit and wait".format(datetime.now().strftime('%Y/%m/%d %H:%M:%S'), username, iteration))
                     exitbtn = self.browser.find_element_by_xpath("//button[@class='_dcj9f']")
@@ -228,6 +229,7 @@ class Sentinel:
 
                     sleep(random.randint(5,10))
 
+                lastcounter = licounts
                 iteration += 1
                 trend['counter'] += 1
                 
