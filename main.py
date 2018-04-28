@@ -67,17 +67,18 @@ def sentinelThread(bot, user):
         fwlist = s.listfollowers(user['igpage'])
         print("{}\t Sentinel followers list complete, len={}".format(datetime.now().strftime('%Y/%m/%d %H:%M:%S'), len(fwlist)))
         s.end()
-        user = db.users.find_one({"_id": user['_id']})
-        message = ""
-        for fw in user['followers']:
-            if not fw in fwlist:
-                message += '<a href="https://instagram.com/{}">{}</a>\n'.format(fw, fw)
-        if not message == "":
-            message = "{} account have unfollowed you!\n".format(len(message.split('\n'))-1) + message
-            for chat_id in user['chat_id']:
-                bot.send_message(chat_id, text=message, parse_mode='HTML')
+        if not fwlist == []:
+            user = db.users.find_one({"_id": user['_id']})
+            message = ""
+            for fw in user['followers']:
+                if not fw in fwlist:
+                    message += '<a href="https://instagram.com/{}">{}</a>\n'.format(fw, fw)
+            if not message == "":
+                message = "{} account have unfollowed you!\n".format(len(message.split('\n'))-1) + message
+                for chat_id in user['chat_id']:
+                    bot.send_message(chat_id, text=message, parse_mode='HTML')
 
-        db.users.update_one({"_id": user['_id']}, {"$set": {"followers": fwlist} })
+            db.users.update_one({"_id": user['_id']}, {"$set": {"followers": fwlist} })
         #sleep(300) # 5minutes
         sleep(random.randint(3200, 4000)) # range(53m, 66m)
 
