@@ -39,9 +39,6 @@ class Sentinel:
         self.page_delay = page_delay
         self.switch_language = True
 
-        if not os.path.exists("cookies"):
-            os.makedirs("cookies")
-
         self.initselenium()
 
     def initselenium(self):
