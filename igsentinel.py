@@ -226,6 +226,7 @@ class Sentinel:
                             ActionChains(self.browser).send_keys(Keys.SPACE).perform()
                             sleep(0.02)
                     
+                    humancritical += 1
                     humanizetest = 0
                 elif lastcounter == licounts:
                     # Humazine slowly. UP & DOWN on fw list page.
