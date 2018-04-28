@@ -190,16 +190,9 @@ class Sentinel:
                 li = self.browser.find_elements_by_xpath("//li[@class='_6e4x5']")
                 licounts = len(li)
 
-                # Check spinner presence
-                '''
-                while True:
-                    try:
-                        if self.browser.find_element_by_xpath("//li[@class='_l0pt6']"):
-                            sleep(1)
-                    except Exception as e:
-                        pass
-                '''
-                    
+                # Wait 1m every 10 iteration
+                if iteration != 0 and iteration % 10 == 0:
+                    sleep(60)    
 
                 if humanizetest == 3:
                     # Humanize critical. Go back, wait 1m * humancritical. Return to fw list page.
@@ -242,11 +235,12 @@ class Sentinel:
                     humanizetest += 1
                 else:
                     humanizetest = 0
+                    humancritical = 0
 
                 lastcounter = licounts
                 iteration += 1
 
-                if (licounts >= fwcounts) or (iteration > (predicted+(predicted/2))):
+                if (licounts >= fwcounts) or (iteration > (predicted+(predicted/2))) or (humancritical == 10):
                     break
 
                 print("datetime={}, account={}, iteration={}, licounts={}".format(datetime.now().strftime('%Y/%m/%d %H:%M:%S'), username, iteration, licounts ))
