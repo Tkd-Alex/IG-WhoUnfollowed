@@ -1,11 +1,11 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import requests, pickle, json, os, random
 from time import sleep, clock
 from pprint import pprint
 from fake_useragent import UserAgent
-
+from datetime import datetime
 from pyvirtualdisplay import Display
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
@@ -156,13 +156,20 @@ class Sentinel:
         self.browser.get('https://www.instagram.com/{}'.format(username))
         sleep(1)
 
+        # Get the followers count
         fwcounts = self.browser.find_element_by_xpath('//a[@href="/{}/followers/"]/span'.format(username))
         ActionChains(self.browser).move_to_element(fwcounts).click().perform()
         fwcounts = fwcounts.get_attribute("title")
         fwcounts = int(fwcounts.replace(",","").replace(".",""))
-        print("Followers number for {}: {}".format(username, fwcounts))
 
         sleep(1)
+        # Init support variable.
+        # li counts = numbers of followers founded.
+        # iteration = numbers of iteration.
+        # fast = numbers of scrolling to do fast.
+        # slow = numbers of scrolling to do slow.
+        # tren = counter, numbers of iteration. fast, boolean fast or slow.
+        # predicted = numbers of predicted iteration.
         licounts = 0
         iteration = 0
         fast = random.randint(5,8)
@@ -193,36 +200,31 @@ class Sentinel:
                 li = self.browser.find_elements_by_xpath("//li[@class='_6e4x5']")
                 licounts = len(li)
 
-                # Humanize
-                if iteration % 15 == 0:
+                # Humanize. Scrool to middle.
+                if iteration % random.randint(14,20) == 0:
                     self.browser.execute_script("li = document.getElementsByClassName('_6e4x5'); li[li.length-{}].scrollIntoView()".format(random.randint(5,14)))
                     sleep(1)
 
-                # Humanize
+                # Humanize. Wait.
                 if iteration % random.randint(25,40) == 0:
                     sleep(random.randint(5,10))
 
                 iteration += 1
                 trend['counter'] += 1
-
-                print("iteration={}, licounts={}, fast={}".format(iteration, licounts, trend['fast'] ))
                 
-                if licounts >= fwcounts:
-                    break;
-
-                if iteration > predicted + random.randint(10,30):
+                if licounts >= fwcounts or iteration > predicted + random.randint(10,30):
                     break
+
+                print("datetime={}, account={}, iteration={}, licounts={}, fast={}".format(datetime.now().strftime('%Y/%m/%d %H:%M:%S'), username, iteration, licounts, trend['fast'] ))
                 
             except Exception as e:
                 pass
 
         fwlist = []
-        for fw in li:
-            splittedtext = fw.text.split("\n")
-            fwlist.append({
-                'username': splittedtext[0],
-                'link': "https://www.instagram.com/{}".format(splittedtext[0])
-            })
+        if licounts >= fwcounts:
+            for fw in li:
+                splittedtext = fw.text.split("\n")
+                fwlist.append(splittedtext[0])
 
         return fwlist
 

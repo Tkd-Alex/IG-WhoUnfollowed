@@ -101,5 +101,5 @@ ENV/
 .mypy_cache/
 
 sentinel.pkl
-confing.ini
+config.ini
 chromedriver
