@@ -215,9 +215,9 @@ class Sentinel:
 
                 # Humanize. Scroll to middle, wait and exit.
                 if iteration % 15 == 0 and iteration != 0:
-                    print("datetime={}, account={}, iteration={}, humanize=scroll middle".format(datetime.now().strftime('%Y/%m/%d %H:%M:%S'), username, iteration))
-                    self.browser.execute_script("li = document.getElementsByClassName('_6e4x5'); li[li.length/2].scrollIntoView()")
-                    sleep(1)
+                    #print("datetime={}, account={}, iteration={}, humanize=scroll middle".format(datetime.now().strftime('%Y/%m/%d %H:%M:%S'), username, iteration))
+                    #self.browser.execute_script("li = document.getElementsByClassName('_6e4x5'); li[(li.length-1)/2].scrollIntoView()")
+                    #sleep(1)
 
                     print("datetime={}, account={}, iteration={}, humanize=exit and wait".format(datetime.now().strftime('%Y/%m/%d %H:%M:%S'), username, iteration))
                     exitbtn = self.browser.find_element_by_xpath("//button[@class='_dcj9f']")
