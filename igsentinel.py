@@ -54,9 +54,11 @@ class Sentinel:
 
         chrome_options.add_argument('--disable-gpu')
 
+        '''
         if not self.proxy is None:
             proxy = self.proxy.split(":")
             chrome_options.add_argument('--proxy-server={}:{}'.format(proxy[0], proxy[1]))
+        '''
 
         if self.headless_browser:
             chrome_options.add_argument('--headless')
@@ -175,8 +177,8 @@ class Sentinel:
         # predicted = numbers of predicted iteration.
         licounts = 0
         iteration = 0
-        fast = random.randint(5,8)
-        slow = random.randint(9,15)
+        fast = random.randint(6,9)
+        slow = random.randint(9,13)
         trend = {
             'counter': 0,
             'fast': True
@@ -203,7 +205,7 @@ class Sentinel:
                     trend['fast'] = False
                 
                 if trend['fast'] is False and trend['counter'] <= slow:
-                    sleep(random.randint(2,5))
+                    sleep(random.randint(2,4))
                 elif trend['fast'] is False and trend['counter'] > slow:
                     trend['counter'] = 0
                     trend['fast'] = True
@@ -212,8 +214,8 @@ class Sentinel:
                 licounts = len(li)
 
                 # Humanize. Scroll to middle, wait and exit.
-                if iteration % 10 == 0 and iteration != 0:
-                    print("datetime={}, account={}, iteration={}, humanize=scroll back".format(datetime.now().strftime('%Y/%m/%d %H:%M:%S'), username, iteration))
+                if iteration % 15 == 0 and iteration != 0:
+                    print("datetime={}, account={}, iteration={}, humanize=scroll middle".format(datetime.now().strftime('%Y/%m/%d %H:%M:%S'), username, iteration))
                     self.browser.execute_script("li = document.getElementsByClassName('_6e4x5'); li[li.length/2].scrollIntoView()")
                     sleep(1)
 
@@ -236,6 +238,17 @@ class Sentinel:
                 
             except Exception as e:
                 print(e)
+                try:
+                    exitbtn = self.browser.find_element_by_xpath("//button[@class='_dcj9f']")
+                    ActionChains(self.browser).move_to_element(exitbtn).click().perform()
+                except NoSuchElementException:
+                    pass
+                sleep(random.randint(5,10))
+                try:
+                    showfw = self.browser.find_element_by_xpath('//a[@href="/{}/followers/"]/span'.format(username))
+                    ActionChains(self.browser).move_to_element(showfw).click().perform()
+                except NoSuchElementException:
+                    pass
                 pass
 
         fwlist = []
