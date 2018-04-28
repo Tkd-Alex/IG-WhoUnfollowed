@@ -21,6 +21,8 @@ sentinel_password = config.get('igsentinel', 'password')
 client = MongoClient('localhost', 27017)
 db = client['whounfollowed']
 
+proxies = open("proxies.txt","r").read().split("\n")
+
 def help(bot, update):
     update.message.reply_text('Hi! Use /track <igpage> to start tracking of your followers.')
 
@@ -32,7 +34,7 @@ def track(bot, update, args):
             update.message.reply_text('Please wait 1/2 minutes... We are checking the page <b>{}</b>'.format(igpage), parse_mode='HTML')
             
             print("{}\t Start sentinel for igpage={}".format(datetime.now().strftime('%Y/%m/%d %H:%M:%S'), igpage))
-            s = Sentinel(sentinel_username, sentinel_password, nogui=True, headless_browser=True)
+            s = Sentinel(sentinel_username, sentinel_password, nogui=True, headless_browser=True, proxy=random.choice(proxies))
             s.login()
             result, message = s.checkuser(igpage)
             print("{}\t Result check followers for igpage={}, result={}, message={}".format(datetime.now().strftime('%Y/%m/%d %H:%M:%S'), igpage, result, message))
@@ -53,14 +55,14 @@ def track(bot, update, args):
                 update.message.reply_text('Sorry but you are already tracking <b>{}</b>'.format(igpage), parse_mode='HTML')
             else:
                 db.users.update_one({"_id": alreadyexist['_id']}, {'$push': {'chat_id': update.message.chat_id}})
-                update.message.reply_text('Another telegram user is tracking {}. Both will receive the notification'.format(igpage))
+                update.message.reply_text('Another telegram user is tracking <b>{}</b>. Both will receive the notification'.format(igpage), parse_mode='HTML')
     else:
         update.message.reply_text('Wrong input! Usage: /track igpage.\nExample: /track <b>tkd_alex</b>', parse_mode='HTML')
 
 def sentinelThread(bot, user):
     while True:
         print("{}\t Start sentinel thread for igpage={}".format(datetime.now().strftime('%Y/%m/%d %H:%M:%S'), user['igpage']))
-        s = Sentinel(sentinel_username, sentinel_password, nogui=True, headless_browser=True)
+        s = Sentinel(sentinel_username, sentinel_password, nogui=True, headless_browser=True, proxy=random.choice(proxies))
         s.login()
         fwlist = s.listfollowers(user['igpage'])
         print("{}\t Sentinel followers list complete, len={}".format(datetime.now().strftime('%Y/%m/%d %H:%M:%S'), len(fwlist)))
