@@ -65,7 +65,7 @@ def sentinelThread(bot, user):
             random.seed(clock())
             proxy = proxy=random.choice(proxies)
             print("{}\t Start sentinel thread for igpage={}, proxy={}".format(datetime.now().strftime('%Y/%m/%d %H:%M:%S'), user['igpage'], proxy))
-            s = Sentinel(sentinel_username, sentinel_password, mobile=True, nogui=True, headless_browser=True, )
+            s = Sentinel(sentinel_username, sentinel_password, mobile=True, nogui=True, headless_browser=True, proxy=proxy)
             login = s.login()
             print("{}\t Sentinel login={}, igpage={}".format(datetime.now().strftime('%Y/%m/%d %H:%M:%S'), login, user['igpage']))
             fwlist = s.listfollowers(user['igpage'])
