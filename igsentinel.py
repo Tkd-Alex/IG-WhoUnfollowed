@@ -191,7 +191,7 @@ class Sentinel:
                 licounts = len(li)
 
                 # Wait 1m every 10 iteration
-                if iteration != 0 and iteration % 10 == 0:
+                if iteration != 0 and iteration % 20 == 0:
                     sleep(45)    
 
                 if humanizetest == 3:
