@@ -78,7 +78,8 @@ def sentinelThread(bot, user):
                     if not fw in fwlist:
                         message += '<a href="https://instagram.com/{}">{}</a>\n'.format(fw, fw)
                 if not message == "":
-                    message = "{} account have unfollowed you!\n".format(len(message.split('\n'))-1) + message
+                    message = "Dear {}, {} account have unfollowed you!\n".format(user['igpage'],len(message.split('\n'))-1) + message
+                    print("{}\t {}".format(datetime.now().strftime('%Y/%m/%d %H:%M:%S'), message))
                     for chat_id in user['chat_id']:
                         bot.send_message(chat_id, text=message, parse_mode='HTML')
 

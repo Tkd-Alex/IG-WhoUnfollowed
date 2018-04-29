@@ -179,7 +179,7 @@ class Sentinel:
             try:
                 random.seed(clock)
 
-                sleep(1)
+                sleep(0.6)
                 
                 # Press space
                 for i in range(0, 3):
@@ -192,7 +192,7 @@ class Sentinel:
 
                 # Wait 1m every 10 iteration
                 if iteration != 0 and iteration % 10 == 0:
-                    sleep(60)    
+                    sleep(45)    
 
                 if humanizetest == 3:
                     # Humanize critical. Go back, wait 1m * humancritical. Return to fw list page.
@@ -224,11 +224,11 @@ class Sentinel:
                 elif lastcounter == licounts:
                     # Humazine slowly. UP & DOWN on fw list page.
                     print("datetime={}, account={}, iteration={}, action=UP & SPACE!".format(datetime.now().strftime('%Y/%m/%d %H:%M:%S'), username, iteration ))
-                    for i in range(0, (40 * (humanizetest+1))):
+                    for i in range(0, (30 * (humanizetest+1))):
                         ActionChains(self.browser).send_keys(Keys.UP).perform()
                         sleep(0.02)
                     
-                    for i in range(0, (50 * (humanizetest+1))):
+                    for i in range(0, (40 * (humanizetest+1))):
                         ActionChains(self.browser).send_keys(Keys.DOWN).perform()
                         sleep(0.02)
                     
