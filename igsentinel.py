@@ -169,7 +169,7 @@ class Sentinel:
         
         licounts = 0
         iteration = 0
-        predicted = fwcounts/12
+        predicted = int(fwcounts/12)
 
         estimated = ( ( (0.02*3) + 0.4 ) * predicted ) + ( ( predicted/25 ) * 30 ) + ( (fwcounts / 10)*( (30*0.02)+(40*0.02) + 0.5 )  )
         print("account={}, predicted={} loop, estimated={}m".format(username, predicted, round((estimated/60), 2)))
