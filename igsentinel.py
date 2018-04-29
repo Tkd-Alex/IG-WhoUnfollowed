@@ -170,15 +170,17 @@ class Sentinel:
         licounts = 0
         iteration = 0
         predicted = fwcounts/12
+
+        estimated = ( ( (0.02*3) + 0.4 ) * predicted ) + ( ( predicted/25 ) * 30 ) + ( (fwcounts / 10)*( (30*0.02)+(40*0.02) + 0.5 )  )
+        print("account={}, predicted={} loop, estimated={}m".format(username, predicted, round((estimated/60), 2)))
         
         lastcounter = 0
         humanizetest = 0
         humancritical = 0
 
-        while(True):
+        while True:
             try:
                 random.seed(clock)
-
                 sleep(0.4)
                 
                 # Press space
@@ -190,9 +192,9 @@ class Sentinel:
                 li = self.browser.find_elements_by_xpath("//li[@class='_6e4x5']")
                 licounts = len(li)
 
-                # Wait 1m every 10 iteration
+                # Wait 30s every 25 iteration
                 if iteration != 0 and iteration % 25 == 0:
-                    sleep(35)    
+                    sleep(30)    
 
                 if humanizetest == 3:
                     # Humanize critical. Go back, wait 1m * humancritical. Return to fw list page.
@@ -232,7 +234,7 @@ class Sentinel:
                         ActionChains(self.browser).send_keys(Keys.DOWN).perform()
                         sleep(0.02)
                     
-                    sleep(1)
+                    sleep(0.5)
                     humanizetest += 1
                 else:
                     humanizetest = 0
@@ -241,7 +243,7 @@ class Sentinel:
                 lastcounter = licounts
                 iteration += 1
 
-                if (licounts >= fwcounts) or (iteration > (predicted+(predicted/2))) or (humancritical == 10):
+                if (licounts >= fwcounts) or (iteration > (predicted+(predicted/2))) or (humancritical == 5):
                     break
 
                 print("datetime={}, account={}, iteration={}, licounts={}".format(datetime.now().strftime('%Y/%m/%d %H:%M:%S'), username, iteration, licounts ))
