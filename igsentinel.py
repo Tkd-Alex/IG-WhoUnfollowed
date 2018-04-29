@@ -192,7 +192,7 @@ class Sentinel:
 
                 # Wait 1m every 10 iteration
                 if iteration != 0 and iteration % 20 == 0:
-                    sleep(45)    
+                    sleep(40)    
 
                 if humanizetest == 3:
                     # Humanize critical. Go back, wait 1m * humancritical. Return to fw list page.
@@ -222,7 +222,7 @@ class Sentinel:
                     humancritical += 1
                     humanizetest = 0
                 elif lastcounter == licounts:
-                    # Humazine slowly. UP & DOWN on fw list page.
+                    # Humazine slowly. UP & SPACE on fw list page.
                     print("datetime={}, account={}, iteration={}, action=UP & SPACE!".format(datetime.now().strftime('%Y/%m/%d %H:%M:%S'), username, iteration ))
                     for i in range(0, (30 * (humanizetest+1))):
                         ActionChains(self.browser).send_keys(Keys.UP).perform()
@@ -232,6 +232,7 @@ class Sentinel:
                         ActionChains(self.browser).send_keys(Keys.DOWN).perform()
                         sleep(0.02)
                     
+                    sleep(1)
                     humanizetest += 1
                 else:
                     humanizetest = 0

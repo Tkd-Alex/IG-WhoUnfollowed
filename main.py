@@ -85,6 +85,7 @@ def sentinelThread(bot, user):
 
                 db.users.update_one({"_id": user['_id']}, {"$set": {"followers": fwlist} })
         except Exception as e:
+            print(e)
             pass
 
         #sleep(300) # 5minutes
