@@ -179,7 +179,7 @@ class Sentinel:
             try:
                 random.seed(clock)
 
-                sleep(0.6)
+                sleep(0.4)
                 
                 # Press space
                 for i in range(0, 3):
@@ -191,8 +191,8 @@ class Sentinel:
                 licounts = len(li)
 
                 # Wait 1m every 10 iteration
-                if iteration != 0 and iteration % 20 == 0:
-                    sleep(40)    
+                if iteration != 0 and iteration % 25 == 0:
+                    sleep(35)    
 
                 if humanizetest == 3:
                     # Humanize critical. Go back, wait 1m * humancritical. Return to fw list page.
