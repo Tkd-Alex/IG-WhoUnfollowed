@@ -105,3 +105,4 @@ config.ini
 chromedriver
 proxies.txt
 followers/*
+.vscode/*
