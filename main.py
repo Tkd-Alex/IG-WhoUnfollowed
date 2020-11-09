@@ -1,117 +1,152 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import _thread, json, pickle, random
-from time import sleep, clock
-from datetime import datetime
+import _thread
+import os
+import json
+import pickle
+import random
+import time
+import logging
+import datetime
+
 from telegram.ext import Updater, CommandHandler, Job, CallbackQueryHandler
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-from configparser import SafeConfigParser
+from configparser import ConfigParser
 from pprint import pprint
 from pymongo import MongoClient
+
 from igsentinel import Sentinel
 
-config = SafeConfigParser()
-config.read('./config.ini')
+logging.basicConfig(format="%(asctime)s - %(levelname)s - %(name)s - [%(funcName)s]: %(message)s", datefmt="%d/%m/%Y %H:%M:%S", level=logging.INFO)
+logger = logging.getLogger("TELEGRAM-BOT")
 
-telegram_token = config.get('telegram', 'token')
-sentinel_username = config.get('igsentinel', 'username')
-sentinel_password = config.get('igsentinel', 'password')
+config = ConfigParser()
+config.read("./config.ini")
 
-client = MongoClient('localhost', 27017)
-db = client['whounfollowed']
+telegram_token = config.get("telegram", "token")
+sentinel_username = config.get("igsentinel", "username")
+sentinel_password = config.get("igsentinel", "password")
 
-proxies = open("proxies.txt","r").read().split("\n")
+client = MongoClient("localhost", 27017)
+db = client["whounfollowed"]
 
-def help(bot, update):
-    update.message.reply_text('Hi! Use /track <igpage> to start tracking of your followers.')
 
-def track(bot, update, args):
-    if len(args) == 1:
-        igpage = args[0]
-        alreadyexist = db.users.find_one({'igpage': igpage})
+def help_method(update, context):
+    update.message.reply_text("Hi! Use /track <igpage> to start tracking of your followers.")
+
+
+def track(update, context):
+    if len(context.args) == 1:
+        igpage = context.args[0]
+        alreadyexist = db.users.find_one({"igpage": igpage})
         if alreadyexist is None:
-            update.message.reply_text('Please wait 1/2 minutes... We are checking the page <b>{}</b>'.format(igpage), parse_mode='HTML')
-            
-            print("{}\t Start sentinel for igpage={}".format(datetime.now().strftime('%Y/%m/%d %H:%M:%S'), igpage))
-            s = Sentinel(sentinel_username, sentinel_password, nogui=True, headless_browser=True, proxy=random.choice(proxies))
-            s.login()
-            result, message = s.checkuser(igpage)
-            print("{}\t Result check followers for igpage={}, result={}, message={}".format(datetime.now().strftime('%Y/%m/%d %H:%M:%S'), igpage, result, message))
-            
-            if result is True:
-                user = {
-                    'chat_id': [update.message.chat_id],
-                    'igpage': igpage,
-                    'followers': []
-                }
-                db.users.insert_one(user)
-            
-            update.message.reply_text(message)
-            _thread.start_new_thread(sentinelThread, (bot, user, ) )
-            s.end()
-        else:
-            if update.message.chat_id in alreadyexist['chat_id']:
-                update.message.reply_text('Sorry but you are already tracking <b>{}</b>'.format(igpage), parse_mode='HTML')
-            else:
-                db.users.update_one({"_id": alreadyexist['_id']}, {'$push': {'chat_id': update.message.chat_id}})
-                update.message.reply_text('Another telegram user is tracking <b>{}</b>. Both will receive the notification'.format(igpage), parse_mode='HTML')
-    else:
-        update.message.reply_text('Wrong input! Usage: /track igpage.\nExample: /track <b>tkd_alex</b>', parse_mode='HTML')
+            update.message.reply_text("Please wait 1/2 minutes... We are checking the page <b>{}</b>".format(igpage), parse_mode="HTML")
 
-def sentinelThread(bot, user):
+            logger.info("Start sentinel for igpage={}".format(igpage))
+            sentinel = Sentinel(sentinel_username, sentinel_password, nogui=True, headless_browser=True)
+            sentinel.login()
+            result, message = sentinel.checkuser(igpage)
+            logger.info("Result check followers for igpage={}, result={}, message={}".format(igpage, result, message))
+
+            if result is True:
+                user = {"chat_id": [update.message.chat_id], "igpage": igpage, "followers": [], "last_update": None}
+                db.users.insert_one(user)
+
+            update.message.reply_text(message)
+            _thread.start_new_thread(
+                _thread_sentinel,
+                (
+                    context.bot,
+                    user,
+                ),
+            )
+            sentinel.end()
+        else:
+            if update.message.chat_id in alreadyexist["chat_id"]:
+                update.message.reply_text("Sorry but you are already tracking <b>{}</b>".format(igpage), parse_mode="HTML")
+            else:
+                db.users.update_one({"_id": alreadyexist["_id"]}, {"$push": {"chat_id": update.message.chat_id}})
+                update.message.reply_text("Another telegram user is tracking <b>{}</b>. Both will receive the notification".format(igpage), parse_mode="HTML")
+    else:
+        update.message.reply_text("Wrong input! Usage: /track igpage.\nExample: /track <b>tkd_alex</b>", parse_mode="HTML")
+
+
+def _thread_sentinel(bot, user):
     while True:
         try:
-            random.seed(clock())
-            proxy = proxy=random.choice(proxies)
-            print("{}\t Start sentinel thread for igpage={}, proxy={}".format(datetime.now().strftime('%Y/%m/%d %H:%M:%S'), user['igpage'], proxy))
-            s = Sentinel(sentinel_username, sentinel_password, mobile=True, nogui=True, headless_browser=True, proxy=proxy)
-            login = s.login()
-            print("{}\t Sentinel login={}, igpage={}".format(datetime.now().strftime('%Y/%m/%d %H:%M:%S'), login, user['igpage']))
-            fwlist = s.listfollowers(user['igpage'])
-            print("{}\t Sentinel followers list complete, igpage={}, len={}".format(datetime.now().strftime('%Y/%m/%d %H:%M:%S'), user['igpage'], len(fwlist)))
-            s.end()
-            if not fwlist == []:
-                user = db.users.find_one({"_id": user['_id']})
-                message = ""
-                for fw in user['followers']:
-                    if not fw in fwlist:
-                        message += '<a href="https://instagram.com/{}">{}</a>\n'.format(fw, fw)
-                if not message == "":
-                    message = "Dear {}, {} account have unfollowed you!\n".format(user['igpage'],len(message.split('\n'))-1) + message
-                    print("{}\t {}".format(datetime.now().strftime('%Y/%m/%d %H:%M:%S'), message))
-                    for chat_id in user['chat_id']:
-                        bot.send_message(chat_id, text=message, parse_mode='HTML')
+            logger.info("Start sentinel thread for igpage={}".format(user["igpage"]))
+            if  user["last_update"] is None or (datetime.datetime.now() - user["last_update"]).total_seconds() / 60 >= 50:
+                sentinel = Sentinel(sentinel_username, sentinel_password, nogui=True, headless_browser=True)
+                login = sentinel.login()
+                logger.info("Sentinel login={}, igpage={}".format(login, user["igpage"]))
+                followers_list = sentinel.listfollowers(user["igpage"])
+                logger.info("Sentinel followers list complete, igpage={}, len={}".format(user["igpage"], len(followers_list)))
+                sentinel.end()
 
-                db.users.update_one({"_id": user['_id']}, {"$set": {"followers": fwlist} })
+                # Update database record ...
+                db.users.update_one({"_id": user["_id"]}, {"$set": {"last_update": datetime.datetime.now()}})
+
+                if os.path.isfile("followers/{}.txt".format(user["igpage"])) is False:  # First time...
+                    with open("followers/{}.txt".format(user["igpage"]), "w+") as f:
+                        f.write("\n".join(followers_list)) # + "\n")
+                    history_followers = []
+                else:
+                    with open("followers/{}.txt".format(user["igpage"]), "r") as f:
+                            history_followers = f.readlines()
+                    history_followers = [item.lower().replace("\n", "").strip() for item in history_followers]
+                    followers_update = list(set(history_followers + followers_list))
+                    with open("followers/{}.txt".format(user["igpage"]), "w+") as f:
+                        f.write("\n".join(followers_update)) # + "\n")
+
+                if followers_list != []:
+                    if history_followers == []:
+                        for chat_id in user["chat_id"]:
+                            bot.send_message(chat_id, text="Successfully downloaded all of your <b>{}</b> followers".format(len(followers_list)), parse_mode="HTML")
+                    else:
+                        message = ""
+                        for username in history_followers:  # Check current username
+                            if not username in followers_list:
+                                message += '<a href="https://instagram.com/{0}">{0}</a>\n'.format(username)
+
+                        if message != "":
+                            message = "Dear {}, {} account have unfollowed you!\n".format(user["igpage"], len(message.split("\n")) - 1) + message
+                            logger.info("{}".format(message))
+                            for chat_id in user["chat_id"]:
+                                bot.send_message(chat_id, text=message, parse_mode="HTML", disable_web_page_preview=True)
         except Exception as e:
-            print(e)
-            pass
+            logger.error("Exception raised: {}".format(e))
 
-        #sleep(300) # 5minutes
-        sleep(random.randint(3200, 4000)) # range(53m, 66m)
+        time.sleep(60 * random.uniform(53, 260))
 
-def main():
-    updater = Updater(telegram_token)
 
-    # Get the dispatcher to register handlers
-    dp = updater.dispatcher
+def error(update, context):
+    logger.warning('Update "%s" caused error "%s"', update, context.error)
 
-    dp.add_handler(CommandHandler("start", help))
-    dp.add_handler(CommandHandler("help", help))
 
-    dp.add_handler(CommandHandler("track", track, pass_args=True))
+if __name__ == "__main__":
+    if not os.path.exists("followers/"):
+        os.makedirs("followers/")
 
-    users = db.users.find({}, {"followers": 0, "chat_id": 0})
+    updater = Updater(telegram_token, use_context=True)
+    dispatcher = updater.dispatcher
+
+    dispatcher.add_handler(CommandHandler("start", help_method))
+    dispatcher.add_handler(CommandHandler("help", help_method))
+
+    dispatcher.add_handler(CommandHandler("track", track, pass_args=True))
+
+    users = db.users.find({}, {"chat_id": 0})
     for user in users:
-        _thread.start_new_thread(sentinelThread, (dp.bot, user, ) )
+        _thread.start_new_thread(
+            _thread_sentinel,
+            (
+                dispatcher.bot,
+                user,
+            ),
+        )
+
+    dispatcher.add_error_handler(error)
 
     updater.start_polling()
-
-    # Block until you press Ctrl-C or the process receives SIGINT, SIGTERM or
-    # SIGABRT. This should be used most of the time, since start_polling() is
-    # non-blocking and will stop the bot gracefully.
     updater.idle()
-
-if __name__ == '__main__':
-    main()
