@@ -44,7 +44,7 @@ def track(update, context):
             update.message.reply_text("Please wait 1/2 minutes... We are checking the page <b>{}</b>".format(igpage), parse_mode="HTML")
 
             logger.info("Start sentinel for igpage={}".format(igpage))
-            sentinel = Sentinel(sentinel_username, sentinel_password, nogui=True, headless_browser=True)
+            sentinel = Sentinel(sentinel_username, sentinel_password, nogui=True, headless_browser=False)
             sentinel.login()
             result, message = sentinel.checkuser(igpage)
             logger.info("Result check followers for igpage={}, result={}, message={}".format(igpage, result, message))
@@ -77,7 +77,7 @@ def _thread_sentinel(bot, user):
         try:
             logger.info("Start sentinel thread for igpage={}".format(user["igpage"]))
             if  user["last_update"] is None or (datetime.datetime.now() - user["last_update"]).total_seconds() / 60 >= 50:
-                sentinel = Sentinel(sentinel_username, sentinel_password, nogui=True, headless_browser=True)
+                sentinel = Sentinel(sentinel_username, sentinel_password, nogui=True, headless_browser=False)
                 login = sentinel.login()
                 logger.info("Sentinel login={}, igpage={}".format(login, user["igpage"]))
                 followers_list = sentinel.listfollowers(user["igpage"])

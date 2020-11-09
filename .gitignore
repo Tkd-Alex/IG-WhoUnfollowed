@@ -106,3 +106,4 @@ chromedriver
 proxies.txt
 followers/*
 .vscode/*
+screenshot/*

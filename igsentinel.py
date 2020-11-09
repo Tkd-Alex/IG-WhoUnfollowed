@@ -6,6 +6,7 @@ import pickle
 import json
 import os
 import random
+import datetime
 import time
 import logging
 from bs4 import BeautifulSoup
@@ -118,10 +119,13 @@ class Sentinel:
             self.browser.get("https://www.instagram.com")
             self.accept_cookie()
 
-        nav_counter = len(self.browser.find_elements_by_xpath("//nav"))
-        if nav_counter == 2:
+        if self.username in self.browser.page_source:
             pickle.dump(self.browser.get_cookies(), open("sentinel.pkl", "wb"))
             return True
+
+        # filename = "screenshot/{}_{}.png".format(self.username, datetime.datetime.now())
+        # self.logger.info(filename)
+        # self.browser.save_screenshot(filename)
 
         self.browser.get("https://www.instagram.com/accounts/login/?source=auth_switcher")
 
@@ -141,8 +145,7 @@ class Sentinel:
         time.sleep(2)
 
         self.accept_cookie()
-        nav_counter = len(self.browser.find_elements_by_xpath("//nav"))
-        if nav_counter == 2:
+        if self.username in self.browser.page_source:
             pickle.dump(self.browser.get_cookies(), open("sentinel.pkl", "wb"))
             return True
 
