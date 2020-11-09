@@ -208,21 +208,25 @@ class Sentinel:
             )
             soup = BeautifulSoup(self.browser.page_source, features="html.parser")
             followers_data = json.loads(soup.text)
-            has_next = followers_data["data"]["user"]["edge_followed_by"]["page_info"]["has_next_page"]
-            data.update({"after": followers_data["data"]["user"]["edge_followed_by"]["page_info"]["end_cursor"]})
-            followers_list += [item["node"]["username"] for item in followers_data["data"]["user"]["edge_followed_by"]["edges"]]
-            self.logger.info(
-                "#{} - {} ({}), Followers: {}/{}, Page: {}".format(
-                    str(iteration).zfill(len(str(profile_data["edge_followed_by"]["count"] // 50))),
-                    username,
-                    profile_data["id"],
-                    str(len(followers_list)).zfill(len(str(profile_data["edge_followed_by"]["count"]))),
-                    profile_data["edge_followed_by"]["count"],
-                    data["after"],
+            if followers_data != {}:
+                has_next = followers_data["data"]["user"]["edge_followed_by"]["page_info"]["has_next_page"]
+                data.update({"after": followers_data["data"]["user"]["edge_followed_by"]["page_info"]["end_cursor"]})
+                followers_list += [item["node"]["username"] for item in followers_data["data"]["user"]["edge_followed_by"]["edges"]]
+                self.logger.info(
+                    "#{} - {} ({}), Followers: {}/{}, Page: {}".format(
+                        str(iteration).zfill(len(str(profile_data["edge_followed_by"]["count"] // 50))),
+                        username,
+                        profile_data["id"],
+                        str(len(followers_list)).zfill(len(str(profile_data["edge_followed_by"]["count"]))),
+                        profile_data["edge_followed_by"]["count"],
+                        data["after"],
+                    )
                 )
-            )
-            iteration += 1
-            time.sleep(5 if iteration % 5 == 0 else random.uniform(0.2, 0.8))
+                iteration += 1
+                time.sleep(60 if iteration % 50 == 0 else 10 if iteration % 15 == 0 else random.uniform(0.5, 1.5))
+            else:
+                self.logger.info("Missing data here, pause for 15m ....")
+                time.sleep(60 * 15)
         return followers_list
 
     def accept_cookie(self):
