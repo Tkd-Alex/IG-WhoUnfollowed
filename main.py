@@ -86,6 +86,7 @@ def _thread_sentinel(bot, user):
 
                 # Update database record ...
                 db.users.update_one({"_id": user["_id"]}, {"$set": {"last_update": datetime.datetime.now()}})
+                user = db.users.find({"_id": user["_id"]}, {"chat_id": 1})
 
                 if os.path.isfile("followers/{}.txt".format(user["igpage"])) is False:  # First time...
                     with open("followers/{}.txt".format(user["igpage"]), "w+") as f:
