@@ -224,6 +224,10 @@ class Sentinel:
                 )
                 iteration += 1
                 time.sleep(60 if iteration % 50 == 0 else 10 if iteration % 15 == 0 else random.uniform(0.5, 1.5))
+                if iteration % 100 == 0:
+                    self.browser.get("https://www.instagram.com/")
+                    time.sleep(random.uniform(10, 30))
+                    self.browser.get("https://www.instagram.com/{}".format(username))
             else:
                 self.logger.info(followers_data)
                 self.logger.info("Missing 'data' here, pause for 15m ....")
