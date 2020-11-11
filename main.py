@@ -96,9 +96,9 @@ def _thread_sentinel(bot, user):
                     with open("followers/{}.txt".format(user["igpage"]), "r") as f:
                             history_followers = f.readlines()
                     history_followers = [item.lower().replace("\n", "").strip() for item in history_followers]
-                    followers_update = list(set(history_followers + followers_list))
+                    # followers_update = list(set(history_followers + followers_list))
                     with open("followers/{}.txt".format(user["igpage"]), "w+") as f:
-                        f.write("\n".join(followers_update)) # + "\n")
+                        f.write("\n".join(followers_list)) # + "\n")
 
                 if followers_list != []:
                     if history_followers == []:
