@@ -106,9 +106,11 @@ def _thread_sentinel(bot, user):
                             bot.send_message(chat_id, text="Successfully downloaded all of your <b>{}</b> followers".format(len(followers_list)), parse_mode="HTML")
                     else:
                         message = ""
+                        counter = 0
                         for username in history_followers:  # Check current username
                             if not username in followers_list:
-                                message += '<a href="https://instagram.com/{0}">{0}</a>\n'.format(username)
+                                counter += 1
+                                message += '{1} - <a href="https://instagram.com/{0}">{0}</a>\n'.format(username, counter)
 
                         if message != "":
                             message = "Dear {}, {} account have unfollowed you!\n".format(user["igpage"], len(message.split("\n")) - 1) + message
